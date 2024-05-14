@@ -3,11 +3,8 @@ from flask import Flask, jsonify, request
 
 app = Flask(__name__)
 
-# Use a single dictionary to store the alert configuration
 alert_spread = {'market_id': None, 'spread': None}
 
-
-# Helper function to fetch market data from API
 def fetch_market_data(url):
     response = requests.get(url)
     if response.status_code == 200:
@@ -16,7 +13,6 @@ def fetch_market_data(url):
         return None
 
 
-# Función para obtener el spread de un mercado
 def get_spread(market_id):
     assert isinstance(market_id, str)
     url = f"https://buda.com/api/v2/markets/{market_id}/order_book"
@@ -38,7 +34,6 @@ def get_spread(market_id):
     return spread
 
 
-# Function to fetch all markets from the API
 def fetch_all_markets():
     url = "https://buda.com/api/v2/markets"
     data = fetch_market_data(url)
@@ -47,7 +42,6 @@ def fetch_all_markets():
     return data['markets'], None
 
 
-# Endpoint para obtener el spread de todos los mercados o un mercado específico
 @app.route('/spreads', methods=['GET'])
 def get_all_spreads():
     market_id = request.args.get('market_id')
@@ -78,11 +72,9 @@ def set_alert_spread():
     market_id = data.get('market_id')
     spread = get_spread(market_id)
 
-    # Validate that both market_id and spread are provided
     if not market_id or spread is None:
         return jsonify({"message": "Both market_id and spread are required"}), 400
 
-    # Set the alert
     alert_spread['market_id'] = market_id
     alert_spread['spread'] = spread
 
@@ -93,20 +85,16 @@ def set_alert_spread():
 def poll_alert_spread():
     market_id = alert_spread['market_id']
 
-    # Validate that a market_id is provided
     if not market_id:
         return jsonify({"error": "Market ID not provided"}), 400
 
-    # Check if the requested market is the one with the alert set
     if market_id != alert_spread['market_id']:
         return jsonify({"error": "No alert spread set for this market"}), 404
 
-    # Fetch the current spread for the market
     current_spread = get_spread(market_id)
     if current_spread is None:
         return jsonify({"error": "Could not fetch current spread"}), 500
 
-    # Compare the current spread with the alert spread
     alert_value = alert_spread['spread']
     status = "within" if current_spread == alert_value else ("higher" if current_spread > alert_value else "lower")
 
