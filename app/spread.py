@@ -1,5 +1,5 @@
 import requests
-from flask import Flask, jsonify, request
+from flask import Flask, request
 from flask_restx import Api, Resource, fields
 
 app = Flask(__name__)
@@ -9,21 +9,23 @@ alert_spread = {'market_id': None, 'spread': None}
 api = Api(app, version='1.0', title='Spread API',
           description='Challenge #2 Buda.com')
 
-ns = api.namespace('markets', description='Market operations')
+ns = api.namespace('markets', description='Operaciones con mercados')
 
 spread_response_model = api.model('MarketSpreads', {
-    '*': fields.Float(description='The spread value between buy and sell orders for the market')
+    '*': fields.Float(description='El spread actual de cada mercado')
 })
 
 alert_model = api.model('AlertSpread', {
-    'market_id': fields.String(required=True, description='Market identifier for setting alert'),
+    'market_id': fields.String(required=True,
+                               description='Identificador del mercado para el cual se establecerá la alerta'),
 })
 
 alert_status_model = api.model('AlertStatus', {
-    'market_id': fields.String(required=True, description='Market identifier'),
-    'current_spread': fields.Float(description='Current spread value'),
+    'market_id': fields.String(required=True,
+                               description='Identificador del mercado para el cual se estableció la alerta'),
+    'current_spread': fields.Float(description='Actual valor del spread del mercado'),
     'alert_spread': fields.Float(description='Alert spread value set earlier'),
-    'status': fields.String(description='Status comparing current and alert spreads (within, higher, lower)')
+    'status': fields.String(description='Estado de la alerta. Puede ser "within", "higher" o "lower"')
 })
 
 
@@ -71,23 +73,9 @@ def fetch_all_markets():
     return data['markets'], None
 
 
-@ns.route('/')
-class MarketList(Resource):
-    @api.response(200, 'Successful')
-    @api.response(500, 'Failed to fetch data')
-    def get(self):
-        """
-        Retrieves a list of all markets from the API.
-        """
-        markets, error = fetch_all_markets()
-        if error:
-            api.abort(500, error)
-        return markets
-
-
 @ns.route('/spreads')
 class MarketSpread(Resource):
-    @api.doc(params={'market_id': 'An optional market ID to fetch spread for a specific market'})
+    @api.doc(params={'market_id': 'Campo opcional para obtener el spread de un mercado en particular'})
     @api.response(200, 'Successful', model=spread_response_model)
     @api.response(500, 'Failed to fetch data')
     def get(self):
@@ -114,7 +102,7 @@ class MarketSpread(Resource):
 @api.response(500, 'Internal Server Error')
 class MarketAlertSpread(Resource):
 
-    @api.doc(description="Sets the alert spread for a specific market based on the current spread.")
+    @api.doc(description="Configura el spread de alerta para un mercado específico.")
     @api.expect(alert_model, validate=True)
     @api.response(200, 'Alert spread successfully set', model=alert_model)
     def post(self):
@@ -136,7 +124,7 @@ class MarketAlertSpread(Resource):
 
         return {"message": "Alert spread set for market_id: {}".format(market_id)}
 
-    @api.doc(description="Retrieves the alert spread status for the market.")
+    @api.doc(description="Obtiene el estado de la alerta de spread para el mercado configurado.")
     @api.response(200, 'Alert spread status retrieved', model=alert_status_model)
     @api.response(404, 'No alert spread set for this market')
     def get(self):
@@ -167,4 +155,4 @@ class MarketAlertSpread(Resource):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()

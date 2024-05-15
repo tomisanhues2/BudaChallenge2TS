@@ -9,7 +9,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 EXPOSE 8000
 
 ARG MODE=production
+# Define el entrypoint y el comando por defecto
+CMD if [ "$MODE" = "test" ]; then python -m unittest discover; else gunicorn --bind 0.0.0.0:8000 app.spread:app; fi
 
-# Si el modo es test, se ejecutan los tests, si no, se inicia el servidor gunicorn
-ENTRYPOINT ["sh", "-c"]
-CMD if [ "$MODE" = "test" ]; then pytest; else gunicorn --bind 0.0.0.0:8000 app:app; fi

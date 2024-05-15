@@ -1,4 +1,4 @@
-# Documentación de la Aplicación Flask
+# Documentación de Spread API
 Este documento explica cómo usar Docker para ejecutar una aplicación Flask en producción y cómo ejecutar tests automatizados utilizando el mismo entorno Docker.
 
 ## Pre-requisitos
@@ -40,22 +40,24 @@ EXPOSE 8000
 ARG MODE=production
 
 # Define el entrypoint y el comando por defecto
-ENTRYPOINT ["sh", "-c"]
-CMD if [ "$MODE" = "test" ]; then pytest; else gunicorn --bind 0.0.0.0:8000 app:app; fi
+CMD if [ "$MODE" = "test" ]; then python -m unittest discover; else gunicorn --bind 0.0.0.0:8000 app.spread:app; fi
 ```
 
 ## Construcción y Ejecución de la Imagen Docker
 Para ejecutar la aplicación:
 ```bash
-docker build -t mi-app-flask .
-docker run -p 8000:8000 mi-app-flask
+docker build -t spread_api .
+docker run -p 8000:8000 spread_api
 ```
 
 Para ejecutar los tests:
 ```bash
-docker build --build-arg MODE=test -t mi-app-flask-test .
-docker run mi-app-flask-test
+docker build -t spread_api .
+docker run -e MODE='test' spread_api
 ```
+
+## Documentación de la API
+Para acceder a la documentación de la API, visita http://localhost:8000/.
 
 ## Modo de Pruebas
 Cuando se construye la imagen Docker para tests, asegúrate de especificar el argumento de construcción MODE como test. Esto cambiará el comando que se ejecuta al iniciar el contenedor para que ejecute pytest en lugar de iniciar la aplicación Flask.
